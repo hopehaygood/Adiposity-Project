@@ -1,0 +1,889 @@
+---
+title: "Obesity Project"
+output: html_document
+---
+
+```{r}
+# Import Packages
+library(lme4)
+library(lmerTest)
+library(multcomp)
+library(car)
+library(nortest)
+install.packages("tidyverse")
+library(tidyverse)
+library(ggplot2)
+library(ggpubr)
+library(broom)
+library(AICcmodavg)
+install.packages("ggpubr")
+```
+
+```{r}
+
+install.packages("dplyr")
+install.packages("multcomp")
+library(multcomp)
+install.packages("lme4")
+library(lme4)
+install.packages("lmerTest")
+library(lmerTest)
+install.packages("car")
+library(car)
+
+install.packages("nortest")
+library(nortest)
+install.packages("sf")
+install.packages("agricolae")
+library(agricolae)
+```
+
+``
+
+
+```{r}
+# Read in Data
+obesity_csv <-  read.csv(file = "/Users/12563/Documents/Obesity Project/Obesity.csv")
+
+```
+
+
+
+```{r}
+head(obesity_csv)
+```
+
+```{r}
+tail(obesity_csv)
+```
+
+
+```{r}
+glimpse(obesity_csv)
+```
+There are 73 columns or variables in the data set. Furthermore, there are 10,199 observations, rows, or participants that participated in this COPDGene study.
+
+Now, let us check the mean of a few columns of data:
+
+```{r}
+# Checking the mean of a few variables
+mean(obesity_csv$Height_CM_P1)
+```
+
+```{r}
+mean(obesity_csv$Age_P1)
+```
+The average age of our participants is 59.
+
+
+```{r}
+mean(obesity_csv$BMI_P1)
+```
+The average BMI amung participants is 28.83.
+
+
+```{r}
+mean(obesity_csv$ATS_PackYears_P1, na.rm=TRUE)
+```
+
+
+```{r}
+# Looking at the variable names
+colnames(obesity_csv)
+```
+
+
+
+```{r}
+
+# Selecting Vairables of interest
+my_data <- as_tibble(obesity_csv)
+my_data
+
+my_data %>% select(sid, Age_P1,gender,race,SmokCigNow_P1, finalGold_P1, BMI_P1, Diabetes_P1, HighBloodPres_P1, HighCholest_P1, CoronaryArtery_P1, ATS_PackYears_P1, )
+
+```
+The table above is a table of the columns (variables) of intrest in the Obesity Study.
+
+
+
+```{r}
+summary(obesity_csv$Age_P1)
+```
+
+
+```{r}
+summary(obesity_csv$finalGold_P1)
+```
+
+
+Now it is time to create some tables.
+
+```{r}
+# Gender Table
+tab_gender <- table(obesity_csv$gender,useNA = "always")
+tab_gender 
+```
+
+
+```{r}
+# Percentage table for Gender Table 
+prop.table(tab_gender)
+prop.table(tab_gender)*100
+
+```
+
+```{r}
+# Gender & Diabetes Table
+tab_1 <- table(obesity_csv$gender, obesity_csv$Diabetes_P1)
+tab_1
+colnames(tab_1)  = c("Non-Diabetic", "Diabetic")
+rownames(tab_1) = c("Male", "Female")
+```
+
+
+```{r}
+Gender_BMI_mean <- aggregate(BMI_P1 ~ gender, data = obesity_csv, mean)
+Gender_BMI_mean
+```
+
+
+```{r}
+Gender_BMI_mean <- aggregate(BMI_P1 ~ gender, data = obesity_csv, sd)
+Gender_BMI_mean
+```
+
+```{r}
+tab_2 <- table(obesity_csv$gender, obesity_csv$HighBloodPres_P1)
+colnames(tab_2)  = c("No High Blood Pressure", "High Blood Pressure reported")
+rownames(tab_2) = c("Male", "Female")
+tab_2
+
+```
+
+```{r}
+#table command dosent give NA
+
+# GOLD variable table with NA values includes
+
+table_finalgold <- table(obesity_csv$finalGold_P1,useNA = "always")
+table_finalgold
+```
+
+```{r}
+# Percentage table for GOLD variable 
+prop.table(table_finalgold)
+prop.table(table_finalgold)*100
+
+``` 
+
+
+
+```{r}
+my_data %>% select(PCAsubtype)
+```
+```{r}
+#PCAsubtype Variable table
+table_PCA <- table(obesity_csv$PCAsubtype, useNA = "always")
+table_PCA
+```
+
+```{r}
+# Percentage of PCAsubtype
+prop.table(table_PCA)*100
+```
+
+
+
+
+
+
+
+#create a mean and standard deviation the PCAsubtype
+
+
+
+# create mean and standard deviation of 5 adiposity measures by the PCAsubtype
+
+
+```{r}
+
+# ABVF Mean
+fat_mean_AVBF_PCA <- aggregate(ABVF ~ PCAsubtype, data = obesity_csv, mean)
+row.names(fat_mean_AVBF_PCA) <- c("Normal", "HR Airway Disease without Emphysema", "HR Airway Disease with Emphysema", "Emphysema without HR Airway Disease")
+fat_mean_AVBF_PCA
+```
+
+```{r}
+# AVBF SD
+fat_sd_AVBF_PCA <- aggregate(ABVF ~ PCAsubtype, data = obesity_csv, sd)
+row.names(fat_sd_AVBF_PCA) <- c("Normal", "HR Airway Disease without Emphysema", "HR Airway Disease with Emphysema", "Emphysema without HR Airway Disease")
+fat_sd_AVBF_PCA
+```
+
+
+```{r}
+# SFA Mean
+fat_mean_SFA_PCA <- aggregate(SFA ~ PCAsubtype, data = obesity_csv, mean)
+row.names(fat_mean_SFA_PCA) <- c("Normal", "HR Airway Disease without Emphysema", "HR Airway Disease with Emphysema", "Emphysema without HR Airway Disease")
+fat_mean_SFA_PCA
+```
+
+```{r}
+# SFA SD
+fat_sd_SFA_PCA <- aggregate(SFA ~ PCAsubtype, data = obesity_csv, sd)
+row.names(fat_sd_SFA_PCA) <- c("Normal", "HR Airway Disease without Emphysema", "HR Airway Disease with Emphysema", "Emphysema without HR Airway Disease")
+fat_sd_SFA_PCA
+```
+
+
+```{r}
+# PMA Mean
+fat_mean_PMA_PCA <- aggregate(PMA ~ PCAsubtype, data = obesity_csv, mean)
+row.names(fat_mean_PMA_PCA) <- c("Normal", "HR Airway Disease without Emphysema", "HR Airway Disease with Emphysema", "Emphysema without HR Airway Disease")
+fat_mean_PMA_PCA
+```
+
+```{r}
+# PMA SD
+fat_sd_PMA_PCA <- aggregate(PMA ~ PCAsubtype, data = obesity_csv, sd)
+row.names(fat_sd_PMA_PCA) <- c("Normal", "HR Airway Disease without Emphysema", "HR Airway Disease with Emphysema", "Emphysema without HR Airway Disease")
+fat_sd_PMA_PCA
+```
+
+
+```{r}
+# PMAlean Mean
+fat_mean_PMAlean_PCA <- aggregate(PMAlean ~ PCAsubtype, data = obesity_csv, mean)
+row.names(fat_mean_PMAlean_PCA) <- c("Normal", "HR Airway Disease without Emphysema", "HR Airway Disease with Emphysema", "Emphysema without HR Airway Disease")
+fat_mean_PMAlean_PCA
+```
+
+```{r}
+# PMAlean SD
+fat_sd_PMAlean_PCA <- aggregate(PMAlean ~ PCAsubtype, data = obesity_csv, sd)
+row.names(fat_sd_PMAlean_PCA) <- c("Normal", "HR Airway Disease without Emphysema", "HR Airway Disease with Emphysema", "Emphysema without HR Airway Disease")
+fat_sd_PMAlean_PCA
+```
+
+
+```{r}
+#Liver Density Mean
+fat_mean_liverdensity_PCA <- aggregate(Liverdensity ~ PCAsubtype, data = obesity_csv, mean)
+row.names(fat_mean_liverdensity_PCA) <- c("Normal", "HR Airway Disease without Emphysema", "HR Airway Disease with Emphysema", "Emphysema without HR Airway Disease")
+fat_mean_liverdensity_PCA
+```
+
+```{r}
+# Liver Density SD
+fat_sd_liverdensity_PCA <- aggregate(Liverdensity ~ PCAsubtype, data = obesity_csv, sd)
+row.names(fat_sd_liverdensity_PCA) <- c("Normal", "HR Airway Disease without Emphysema", "HR Airway Disease with Emphysema", "Emphysema without HR Airway Disease")
+fat_sd_liverdensity_PCA
+```
+
+
+```{r}
+
+tmpo = subset(obesity_csv, PCAsubtype =='-9')
+mean(tmpo$Liverdensity)
+```
+
+Result Section 1. Abdomen Visceral Fat (ABVF):
+
+
+```{r}
+
+# ANOVA tests whether any of the group means are different from the overall mean of the data by checking the variance of each individual group aganist the overall variance of the data. If one or more groups falls outside the range of variation predicted by the null hypothesis (all group means are equal), then the test is statistically significant. 
+
+# the aov() function will calculate the test statistic for ANOVA and determine whether there is significant variation among the groups formed by the levels of the independent variable
+
+#This is a one-way ANOVA, we are modeling the Visceral Fat ABVF as a function of the PCAsubtypes 
+
+#ANOA Test Hypotheses:
+#Null hypothesis: the means of the different groups are the same 
+#Alternative Hypothesis: At least one sample mean is not equal to the others
+
+# One-Way Anova Table
+obesity_csv$PCAsubtype = as.factor(obesity_csv$PCAsubtype)
+is.factor(obesity_csv$PCAsubtype)
+one.way <- aov(ABVF ~ PCAsubtype, data = obesity_csv)
+
+summary(one.way)
+```
+
+The Df column displays the degrees of freedom for the independent variable (the number of levels in the variable minus 1), and the degrees of freedom for the residuals (the total number of observations minus one and minus the number of levels in the independent variables)
+
+The Sum Sq column displays the sum of squares (a.k.a. the total variation between the group means and the overall mean
+
+The Mean Sq column is the mean of the sum of squares, calculated by dividing the sum of squares by the degrees of freedom for each parameter.
+
+The F-value column is the test statistic from the F test. This is the mean square of each independent variable divided by the mean square of the residuals. The larger the F value, the more likely it is that the variation caused by the independent variable is real and not due to chance
+
+The Pr(>F) column is the p-value of the F-statistic. This shows how likely it is that the F-value calculated from the test would have occurred if the null hypothesis of no difference among group means were true
+
+The p-value of the PCAsubtype variable is very small (p < 0.01), so it appears that the PCAsubtype does have a real impact on the Visceral Fat.
+
+
+```{r}
+Tmp = obesity_csv["ABVF", "PCAsubtype"]
+Tmp_1 = obesity_csv[ , c(65,63)]
+Tmp.cc = Tmp_1[complete.cases(Tmp_1), ]
+#Check Assumptions
+Tmp_bind_1 = cbind(one.way$residuals, Tmp.cc)
+
+
+
+```
+
+```{r}
+colnames(Tmp_bind_1)[1]=c('residuals')
+```
+
+
+```{r}
+# AVBF Box Plot
+p_1 <- ggplot(obesity_csv, aes(x=PCAsubtype, y=ABVF, fill=PCAsubtype)) +
+    geom_boxplot(alpha=0.7) +
+    stat_summary(fun.y=mean, geom="point", shape=20, size=4, color="red", fill="red") +
+    theme(legend.position="none") +
+    scale_fill_brewer(palette="Set1")
+plot(p_1)
+```
+
+```{r}
+# Post-Hoc Analysis
+posthoc=glht(one.way,linfct=mcp(PCAsubtype ='Tukey'))
+summary(posthoc)
+confint(posthoc)
+```
+
+```{r}
+# Now we will perform the Kruskal-Wallis Test
+kruskal.test(ABVF ~ PCAsubtype, data = obesity_csv)
+```
+
+```{r}
+# Multiple Pairwise-Comparison between groups
+# Wilcoxon Rank Sum Test with Continuity Correction
+pairwise.wilcox.test(obesity_csv$ABVF, obesity_csv$PCAsubtype,
+                 p.adjust.method = "BH")
+```
+
+
+
+
+```{r}
+Dmatrix.tmp=subset(Tmp_bind_1,Tmp_bind_1[,3]=='-9')
+#Dmatrix.tmp;dim(Dmatrix.tmp)  
+
+```
+```{r}
+# Have to use Kolmogorov-Smirnov Test here because due to data
+ks.test(Dmatrix.tmp[,1], "pnorm")
+```
+
+# ANOVA conditions are not valid 
+# Switch to non-parametric
+
+```{r}
+Dmatrix.tmp_2=subset(Tmp_bind_1,Tmp_bind_1[,3]=='1')
+#Dmatrix.tmp;dim(Dmatrix.tmp) 
+
+# Checking for Normality 
+# Shapiro-Wilk Normality Test
+shapiro.test(Dmatrix.tmp_2[,1])
+```
+
+
+```{r}
+Dmatrix.tmp_3=subset(Tmp_bind_1,Tmp_bind_1[,3]=='2')
+#Dmatrix.tmp;dim(Dmatrix.tmp)  
+
+# Checking for Normality 
+# Shapiro-Wilk Normality Test
+shapiro.test(Dmatrix.tmp_3[,1])
+```
+
+
+```{r}
+Dmatrix.tmp_4=subset(Tmp_bind_1,Tmp_bind_1[,3]=='3')
+#Dmatrix.tmp;dim(Dmatrix.tmp)
+
+# Checking for Normality 
+# Shapiro-Wilk Normality Test
+shapiro.test(Dmatrix.tmp_4[,1])
+```
+
+```{r}
+levels(obesity_csv$PCAsubtype) <- c("-9 = Normal", "1 = HR Airway Disease without Emphysema", "2 = HR Airway Disease with Emphysema", "3 = Emphysema without HR Airway Disease")
+
+levels(obesity_csv$PCAsubtype)
+```
+
+```{r}
+levels(obesity_csv$newHRsubtype) <- c("0 = None", "1 = HR Airway with HR Emph", "2 = HR Airway", "3 = HR Emph", "4 = Mod Airway + HR", "5 = Mod Airway Only")
+```
+
+
+
+
+```{r}
+memory.limit()
+memory.limit(24000)
+
+```
+
+
+```{r}
+install.packages("car")
+library(car)
+```
+```{r}
+install.packages("reshape2")
+library(reshape2)
+```
+
+Result Section 2. Subcutaneous Fat Area (SFA):
+
+```{r}
+# ANOVA Table
+one.way_SFA_PCA <- aov(SFA ~ PCAsubtype, data = obesity_csv)
+
+summary(one.way_SFA_PCA)
+```
+The p-value of the PCAsubtype variable is very small (p < 0,01), so it appears that the PCAsubtpe does have a real impact on the SFA fat.
+
+```{r}
+Tmp = obesity_csv["SFA", "PCAsubtype"]
+Tmp_1 = obesity_csv[ , c(71,63)]
+Tmp.cc = Tmp_1[complete.cases(Tmp_1), ] 
+#Check Assumptions
+Tmp_bind = cbind(one.way_SFA_PCA$residuals, Tmp.cc)
+
+
+```
+
+
+```{r}
+# Box Plot
+p_3 <- ggplot(obesity_csv, aes(x=PCAsubtype, y=SFA, fill=PCAsubtype)) +
+    geom_boxplot(alpha=0.7) +
+    stat_summary(fun.y=mean, geom="point", shape=20, size=4, color="red", fill="red") +
+    theme(legend.position="none") +
+    scale_fill_brewer(palette="Set1")
+
+plot(p_3)
+```
+
+```{r}
+# Post-Hoc Analysis
+posthoc=glht(one.way_SFA_PCA,linfct=mcp(PCAsubtype ='Tukey'))
+summary(posthoc)
+confint(posthoc)
+```
+
+
+```{r}
+# Complete Kruskal-Wallis Test
+
+kruskal.test(SFA ~ PCAsubtype, data = obesity_csv)
+```
+
+```{r}
+# Wilcoxon Rank Sum Test with Continuity Correction
+pairwise.wilcox.test(obesity_csv$SFA, obesity_csv$PCAsubtype,
+                 p.adjust.method = "BH")
+```
+
+```{r}
+Dmatrix.tmp=subset(Tmp_bind_1,Tmp_bind_1[,3]=='-9')
+#Dmatrix.tmp;dim(Dmatrix.tmp)  
+
+```
+```{r}
+# Have to use Kolmogorov-Smirnov Test here because due to data
+ks.test(Dmatrix.tmp[,1], "pnorm")
+```
+
+
+```{r}
+install.packages("nortest")
+library(nortest)
+```
+```{r}
+install.packages("onewaytests")
+library(onewaytests)
+```
+
+```{r}
+Dmatrix.tmp_2=subset(Tmp_bind_1,Tmp_bind_1[,3]=='1')
+#Dmatrix.tmp;dim(Dmatrix.tmp) 
+
+
+# Checking for Normality
+# Shapiro-Wilk Normality Test
+shapiro.test(Dmatrix.tmp_2[,1])
+```
+
+```{r}
+Dmatrix.tmp_3=subset(Tmp_bind_1,Tmp_bind_1[,3]=='2')
+#Dmatrix.tmp;dim(Dmatrix.tmp) 
+
+
+# Checking for Normality
+# Shapiro-Wilk Normality Test
+shapiro.test(Dmatrix.tmp_3[,1])
+```
+
+```{r}
+Dmatrix.tmp_4=subset(Tmp_bind_1,Tmp_bind_1[,3]=='3')
+#Dmatrix.tmp;dim(Dmatrix.tmp) 
+
+# Checking for Normality
+# Shapiro-Wilk Normality Test
+shapiro.test(Dmatrix.tmp_4[,1])
+```
+
+
+Results Section 3. Pectoralis Muscle Area (PMA):
+
+
+
+```{r}
+# ANOVA Table
+obesity_csv$PCAsubtype = as.factor(obesity_csv$PCAsubtype)
+is.factor(obesity_csv$PCAsubtype)
+one.way_PMA_PCA <- aov(PMA ~ PCAsubtype, data = obesity_csv)
+
+summary(one.way_PMA_PCA)
+```
+
+```{r}
+# Box Plot
+p_5 <- ggplot(obesity_csv, aes(x=PCAsubtype, y=PMA, fill=PCAsubtype)) +
+    geom_boxplot(alpha=0.7) +
+    stat_summary(fun.y=mean, geom="point", shape=20, size=4, color="red", fill="red") +
+    theme(legend.position="none") +
+    scale_fill_brewer(palette="Set1")
+
+plot(p_5)
+```
+```{r}
+# Post-Hoc Analysis
+posthoc=glht(one.way_PMA_PCA,linfct=mcp(PCAsubtype ='Tukey'))
+summary(posthoc)
+confint(posthoc)
+```
+
+
+```{r}
+Tmp = obesity_csv["PMA", "PCAsubtype"]
+Tmp_1 = obesity_csv[ , c(69,63)]
+Tmp.cc = Tmp_1[complete.cases(Tmp_1), ]
+#Check Assumptions
+Tmp_bind = cbind(one.way_PMA_PCA$residuals, Tmp.cc)
+
+
+```
+
+
+```{r}
+# Complete Kruskal-Wallis Test
+
+kruskal.test(PMA ~ PCAsubtype, data = obesity_csv)
+```
+
+```{r}
+# Wilcoxon Rank Sum Test with COntinuity Correction
+pairwise.wilcox.test(obesity_csv$PMA, obesity_csv$PCAsubtype,
+                 p.adjust.method = "BH")
+```
+
+
+
+```{r}
+Dmatrix.tmp=subset(Tmp_bind_1,Tmp_bind_1[,3]=='-9')
+#Dmatrix.tmp;dim(Dmatrix.tmp)  
+
+```
+```{r}
+# Have to use Kolmogorov-Smirnov Test here because due to data
+ks.test(Dmatrix.tmp[,1], "pnorm")
+```
+
+```{r}
+Dmatrix.tmp_2=subset(Tmp_bind_1,Tmp_bind_1[,3]=='1')
+#Dmatrix.tmp;dim(Dmatrix.tmp)  
+
+# Checking for Normality
+# Shapiro-Wilk Normality Test
+shapiro.test(Dmatrix.tmp_2[,1])
+```
+
+```{r}
+Dmatrix.tmp_3=subset(Tmp_bind_1,Tmp_bind_1[,3]=='2')
+#Dmatrix.tmp;dim(Dmatrix.tmp)  
+
+# Checking for Normality
+# Shapiro-Wilk Normality Test
+shapiro.test(Dmatrix.tmp_3[,1])
+```
+
+```{r}
+Dmatrix.tmp_4=subset(Tmp_bind_1,Tmp_bind_1[,3]=='3')
+#Dmatrix.tmp;dim(Dmatrix.tmp)
+
+# Checking for Normality
+# Shapiro-Wilk Normality Test
+shapiro.test(Dmatrix.tmp_4[,1])
+```
+
+Results Section 4. Lean Pectoralis Muscle Area (PMAlean):
+
+```{r}
+#ANOVA Table
+one.way_PMAlean_PCA <- aov(PMAlean ~ PCAsubtype, data = obesity_csv)
+
+summary(one.way_PMAlean_PCA)
+```
+The p-value of the PCAsubtype variable is very very small (p < 0,01), so it appears that the PCAsubtpe does have a real impact on the PMAlean fat.
+
+```{r}
+Tmp = obesity_csv["PMAlean", "PCAsubtype"]
+Tmp_1 = obesity_csv[ , c(70,63)]
+Tmp.cc = Tmp_1[complete.cases(Tmp_1), ]
+#Check Assumptions
+Tmp_bind = cbind(one.way_PMAlean_PCA$residuals, Tmp.cc)
+
+
+```
+
+
+```{r}
+colnames(Tmp_bind)[1]=c('residuals')
+```
+
+
+```{r}
+# Box Plot
+p_7 <- ggplot(obesity_csv, aes(x=PCAsubtype, y=PMAlean, fill=PCAsubtype)) +
+    geom_boxplot(alpha=0.7) +
+    stat_summary(fun.y=mean, geom="point", shape=20, size=4, color="red", fill="red") +
+    theme(legend.position="none") +
+    scale_fill_brewer(palette="Set1")
+
+plot(p_7)
+```
+
+```{r}
+
+# Post-Hoc Analysis
+posthoc=glht(one.way_PMAlean_PCA,linfct=mcp(PCAsubtype ='Tukey'))
+summary(posthoc)
+confint(posthoc)
+```
+
+```{r}
+# Complete Kruskal-Wallis Test
+
+kruskal.test(PMAlean ~ PCAsubtype, data = obesity_csv)
+```
+
+
+```{r}
+# Wilcoxon Rank Sum Test with Continuity Correction
+
+pairwise.wilcox.test(obesity_csv$PMAlean, obesity_csv$PCAsubtype,
+                 p.adjust.method = "BH")
+```
+
+```{r}
+Dmatrix.tmp=subset(Tmp_bind_1,Tmp_bind_1[,3]=='-9')
+#Dmatrix.tmp;dim(Dmatrix.tmp)  
+
+```
+```{r}
+# Have to use Kolmogorov-Smirnov Test here because due to data
+ks.test(Dmatrix.tmp[,1], "pnorm")
+```
+
+```{r}
+Dmatrix.tmp_2=subset(Tmp_bind_1,Tmp_bind_1[,3]=='1')
+#Dmatrix.tmp;dim(Dmatrix.tmp)  
+
+#Checking for Normality
+# Shapiro-Wilk Normality Test
+shapiro.test(Dmatrix.tmp_2[,1])
+```
+
+```{r}
+Dmatrix.tmp_3=subset(Tmp_bind_1,Tmp_bind_1[,3]=='2')
+#Dmatrix.tmp;dim(Dmatrix.tmp)  
+
+#Checking for Normality
+# Shapiro-Wilk Normality Test
+shapiro.test(Dmatrix.tmp_3[,1])
+```
+
+
+```{r}
+Dmatrix.tmp_4=subset(Tmp_bind_1,Tmp_bind_1[,3]=='3')
+#Dmatrix.tmp;dim(Dmatrix.tmp) 
+
+#Checking for Normality
+# Shapiro-Wilk Normality Test
+shapiro.test(Dmatrix.tmp_4[,1])
+```
+
+Result Section 5. Liver Density.
+
+```{r}
+# ANOVA Table
+obesity_csv$PCAsubtype = as.factor(obesity_csv$PCAsubtype)
+is.factor(obesity_csv$PCAsubtype)
+one.way_Liverdensity_PCA <- aov(Liverdensity ~ PCAsubtype, data = obesity_csv)
+
+summary(one.way_Liverdensity_PCA)
+```
+The p-value of the PCAsubtype variable is decently high (p > 0.01), so it appears that the PCAsubtype does not have a real impact on the Liverdensity fat.
+
+
+```{r}
+Tmp = obesity_csv["Liverdensity", "PCAsubtype"]
+Tmp_1 = obesity_csv[ , c(72,63)]
+Tmp.cc = Tmp_1[complete.cases(Tmp_1), ]
+#Check Assumptions
+Tmp_bind = cbind(one.way_Liverdensity_PCA$residuals, Tmp.cc)
+
+
+```
+
+
+```{r}
+# Box Plot
+p_9 <- ggplot(obesity_csv, aes(x=PCAsubtype, y=Liverdensity, fill=PCAsubtype)) +
+    geom_boxplot(alpha=0.7) +
+    stat_summary(fun.y=mean, geom="point", shape=20, size=4, color="red", fill="red") +
+    theme(legend.position="none") +
+    scale_fill_brewer(palette="Set1")
+
+plot(p_9) 
+```
+
+
+```{r}
+# Post Hoc Analysis
+posthoc=glht(one.way_Liverdensity_PCA,linfct=mcp(PCAsubtype ='Tukey'))
+summary(posthoc)
+confint(posthoc)
+```
+
+```{r}
+# Complete Kruskal-Wallis Test
+
+kruskal.test(Liverdensity ~ PCAsubtype, data = obesity_csv)
+```
+
+```{r}
+# Wilcoxon Rank Sum Test with Continuity Correcrtion
+pairwise.wilcox.test(obesity_csv$Liverdensity, obesity_csv$PCAsubtype,
+                 p.adjust.method = "BH")
+```
+
+```{r}
+# Checking for Normality
+
+Dmatrix.tmp=subset(Tmp_bind_1,Tmp_bind_1[,3]=='-9')
+#Dmatrix.tmp;dim(Dmatrix.tmp)  
+
+```
+```{r}
+# Have to use Kolmogorov-Smirnov Test here because due to data
+ks.test(Dmatrix.tmp[,1], "pnorm")
+```
+
+```{r}
+Dmatrix.tmp_2=subset(Tmp_bind_1,Tmp_bind_1[,3]=='1')
+#Dmatrix.tmp;dim(Dmatrix.tmp)  
+
+#Checking for Normality
+# Shapiro-Wilk Normality Test
+shapiro.test(Dmatrix.tmp_2[,1])
+```
+
+```{r}
+Dmatrix.tmp_3=subset(Tmp_bind_1,Tmp_bind_1[,3]=='2')
+#Dmatrix.tmp;dim(Dmatrix.tmp)  
+
+#Checking for Normality
+# Shapiro-Wilk Normality Test
+shapiro.test(Dmatrix.tmp_3[,1])
+```
+
+```{r}
+Dmatrix.tmp_4=subset(Tmp_bind_1,Tmp_bind_1[,3]=='3')
+#Dmatrix.tmp;dim(Dmatrix.tmp)  
+
+#Checking for Normality
+# Shapiro-Wilk Normality Test
+shapiro.test(Dmatrix.tmp_4[,1])
+```
+
+# Extra
+
+```{r}
+# Perform Dunn Test
+install.packages("FSA")
+library(FSA)
+dunnTest(Liverdensity ~ PCAsubtype, data = obesity_csv, method = "bh")
+```
+
+```{r}
+# Perform kwALLPairsNemmyiTest
+# Performs Nemenyi's non-parametric all-pair comparison test for Kruskal-type ranked data
+# Post-Hoc test for non-parametric comparison
+#Pairwise Test for multiple comparison of mean Rank Sums (Nemenyi-Tests)
+# The outcome of the 
+install.packages("PMCMRplus")
+library(PMCMRplus)
+kw <- kwAllPairsNemenyiTest(Liverdensity ~ PCAsubtype, data = obesity_csv)
+```
+
+```{r}
+kw <- kwAllPairsNemenyiTest(Liverdensity ~ PCAsubtype, data = obesity_csv)
+print(kw)
+```
+
+
+```{r}
+obesity_csv$PCAsubtype <- ifelse(obesity_csv$PCAsubtype == -9, "normal", obesity_csv$PCAsubtype)
+obesity_csv$PCAsubtype <- ifelse(obesity_csv$PCAsubtype == 1, "HR Airway Disease without Emphysema", obesity_csv$PCAsubtype)
+obesity_csv$PCAsubtype <- ifelse(obesity_csv$PCAsubtype == 2, "HR Airway Disease with Emphysema", obesity_csv$PCAsubtype)
+obesity_csv$PCAsubtype <- ifelse(obesity_csv$PCAsubtype == 3, "Emphysema without HR Airway Disease", obesity_csv$PCAsubtype)
+obesity_csv$PCAsubtype <- as.factor(obesity_csv$PCA)
+```
+
+
+
+
+
+```{r}
+levels(obesity_csv$PCAsubtype) <- c("-9 = Normal", "1 = HR Airway Disease without Emphysema", "2 = HR Airway Disease with Emphysema", "3 = Emphysema without HR Airway Disease")
+
+PCA_L <- levels(obesity_csv$PCAsubtype)
+```
+
+
+
+```{r}
+kw_summary <- summary(kw)
+```
+
+```{r}
+as.character(PCA_L) 
+as.factor(PCA_L)
+```
+
+
+
+
